@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LIMBO Key Challenge</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; background: black; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #game, #result { display: none; text-align: center; }
+        .key-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: 220px; margin: auto; }
+        .key { width: 50px; height: 100px; background-size: contain; background-position: center; background-repeat: no-repeat; border-radius: 10px; transition: transform 0.1s; }
+        .highlight { background-color: green !important; }
+        h1, button, #result h2 { font-size: 32px; margin: 20px 0; text-align: center; }
+        button { padding: 10px 20px; border: none; background: #28a745; color: white; border-radius: 5px; cursor: pointer; font-size: 20px; }
+        button:hover { background: #218838; }
+        #result button { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>LIMBO Key Challenge</h1>
+    <button onclick="startGame()">Start</button>
+    <div id="game">
+        <p>Memorize the green key!</p>
+        <div class="key-container" id="keyContainer"></div>
+    </div>
+    <div id="result" style="display: none;">
+        <h2 id="resultText"></h2>
+        <button onclick="restartGame()">Restart</button>
+    </div>
+    <audio id="bgMusic" src="isolation.mp3" preload="auto"></audio>
+    <script>
+        let keys = [];
+        let correctKeyIndex;
+        let shuffleInterval;
+        let audio = document.getElementById("bgMusic");
+        let keysClickable = false;  // New flag to track if keys can be clicked
+
+        function createKeys() {
+            let container = document.getElementById("keyContainer");
+            container.innerHTML = "";
+            keys = [];
+            for (let i = 0; i < 8; i++) {
+                let key = document.createElement("div");
+                key.classList.add("key");
+                key.dataset.index = i;
+                key.onclick = () => {
+                    if (keysClickable) checkKey(i); // Only check if keys are clickable
+                };
+                // Set the default key image (Key.png)
+                key.style.backgroundImage = 'url("Key.png")';
+                keys.push(key);
+                container.appendChild(key);
+            }
+        }
+
+        function startGame() {
+            document.querySelector("button").style.display = "none";
+            document.getElementById("game").style.display = "block";
+            createKeys();
+            correctKeyIndex = Math.floor(Math.random() * 8);
+            // Set the memorized key to the special image (KeyGF.png)
+            keys[correctKeyIndex].style.backgroundImage = 'url("KeyGF.png")';
+            
+            audio.currentTime = 180;
+            audio.play();
+            
+            setTimeout(() => {
+                keys[correctKeyIndex].style.backgroundImage = 'url("Key.png")';  // Revert back to normal image
+                keys[correctKeyIndex].classList.remove("highlight");
+                shuffleKeys();
+            }, 800); // Start moving at 3:00.8
+        }
+
+        function shuffleKeys() {
+            keysClickable = false;  // Disable clicks during shuffle
+            let startTime = Date.now();
+            shuffleInterval = setInterval(() => {
+                let elapsedTime = Date.now() - startTime;
+                if (elapsedTime >= 11000) {
+                    clearInterval(shuffleInterval);
+                    keysClickable = true;  // Enable clicks after shuffle finishes
+                    setTimeout(() => {
+                        if (document.getElementById("game").style.display === "block") {
+                            showResult(false);
+                        }
+                    }, 5000);
+                    return;
+                }
+                shuffleGridPositions();
+            }, 300); // Slowed down slightly to 300ms
+        }
+
+        function shuffleGridPositions() {
+            let positions = [...Array(8).keys()];
+            for (let i = positions.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [positions[i], positions[j]] = [positions[j], positions[i]];
+            }
+            keys.forEach((key, i) => {
+                let row = Math.floor(positions[i] / 4);
+                let col = positions[i] % 4;
+                key.style.transform = `translate(${col * 60 - (i % 4) * 60}px, ${row * 120 - Math.floor(i / 4) * 120}px)`;
+            });
+        }
+
+        function checkKey(index) {
+            clearInterval(shuffleInterval);
+            showResult(index === correctKeyIndex);
+        }
+
+        function showResult(win) {
+            document.getElementById("game").style.display = "none";
+            document.getElementById("result").style.display = "block";
+            document.getElementById("resultText").textContent = win ? "YOU WIN!" : "YOU LOSE!";
+            if (!win) {
+                audio.pause();
+            }
+        }
+
+        function restartGame() {
+            // Hide result and show the start screen again
+            document.getElementById("result").style.display = "none";
+            document.querySelector("button").style.display = "block";
+            // Reset all keys to default (not highlighted or green)
+            keys.forEach(key => {
+                key.style.backgroundImage = 'url("Key.png")';
+                key.style.transform = '';
+            });
+            // Reset the audio
+            audio.currentTime = 0;
+            audio.pause();
+            keysClickable = false;  // Disable clicks on keys at the start of the game
+        }
+    </script>
+</body>
+</html>
