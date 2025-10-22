@@ -1,110 +1,203 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIMBO Key Challenge</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: black;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #game,
+    #result {
+      display: none;
+      text-align: center;
+    }
+    .key-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      width: 220px;
+      margin: auto;
+    }
+    .key {
+      width: 50px;
+      height: 100px;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 10px;
+      transition: transform 0.25s ease;
+    }
+    h1,
+    button,
+    #result h2 {
+      font-size: 32px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      background: #28a745;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 20px;
+    }
+    button:hover {
+      background: #218838;
+    }
+    #result button {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>LIMBO Key Challenge</h1>
+  <button id="startBtn">Start</button>
+
+  <div id="game">
+    <p>Memorize the green key!</p>
+    <div class="key-container" id="keyContainer"></div>
+  </div>
+
+  <div id="result">
+    <h2 id="resultText"></h2>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+
+  <audio id="bgMusic" src="isolation.mp3" preload="auto"></audio>
+
+  <script>
+    const startBtn = document.getElementById("startBtn");
+    const gameDiv = document.getElementById("game");
+    const resultDiv = document.getElementById("result");
+    const resultText = document.getElementById("resultText");
+    const audio = document.getElementById("bgMusic");
+    const container = document.getElementById("keyContainer");
+
     let keys = [];
     let correctKeyIndex;
     let shuffleInterval;
-    let audio = document.getElementById("bgMusic");
     let keysClickable = false;
-    let shuffleStep = 0; // new counter for pattern steps
+    let shuffleStep = 0;
 
     function createKeys() {
-        let container = document.getElementById("keyContainer");
-        container.innerHTML = "";
-        keys = [];
-        for (let i = 0; i < 8; i++) {
-            let key = document.createElement("div");
-            key.classList.add("key");
-            key.dataset.index = i;
-            key.onclick = () => {
-                if (keysClickable) checkKey(i);
-            };
-            key.style.backgroundImage = 'url("Key.png")';
-            keys.push(key);
-            container.appendChild(key);
-        }
+      container.innerHTML = "";
+      keys = [];
+      for (let i = 0; i < 8; i++) {
+        const key = document.createElement("div");
+        key.classList.add("key");
+        key.style.backgroundImage = 'url("Key.png")';
+        key.dataset.index = i;
+        key.onclick = () => {
+          if (keysClickable) checkKey(i);
+        };
+        keys.push(key);
+        container.appendChild(key);
+      }
     }
 
     function startGame() {
-        document.querySelector("button").style.display = "none";
-        document.getElementById("game").style.display = "block";
-        createKeys();
-        correctKeyIndex = Math.floor(Math.random() * 8);
-        keys[correctKeyIndex].style.backgroundImage = 'url("KeyGF.png")';
-        
-        audio.currentTime = 180;
-        audio.play();
-        
-        setTimeout(() => {
-            keys[correctKeyIndex].style.backgroundImage = 'url("Key.png")';
-            shuffleKeys();
-        }, 800);
+      startBtn.style.display = "none";
+      gameDiv.style.display = "block";
+      resultDiv.style.display = "none";
+
+      createKeys();
+
+      correctKeyIndex = Math.floor(Math.random() * 8);
+      keys[correctKeyIndex].style.backgroundImage = 'url("KeyGF.png")';
+
+      audio.currentTime = 180;
+      audio.play();
+
+      setTimeout(() => {
+        keys[correctKeyIndex].style.backgroundImage = 'url("Key.png")';
+        shuffleKeys();
+      }, 800);
     }
 
     function shuffleKeys() {
-        keysClickable = false;
-        let startTime = Date.now();
-        shuffleStep = 0;
-        shuffleInterval = setInterval(() => {
-            let elapsedTime = Date.now() - startTime;
-            if (elapsedTime >= 11000) {
-                clearInterval(shuffleInterval);
-                keysClickable = true;
-                setTimeout(() => {
-                    if (document.getElementById("game").style.display === "block") {
-                        showResult(false);
-                    }
-                }, 5000);
-                return;
-            }
-            shufflePattern();
-            shuffleStep++;
-        }, 300);
+      keysClickable = false;
+      shuffleStep = 0;
+      const startTime = Date.now();
+
+      shuffleInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if (elapsed >= 11000) {
+          clearInterval(shuffleInterval);
+          keysClickable = true;
+
+          setTimeout(() => {
+            if (gameDiv.style.display === "block") showResult(false);
+          }, 5000);
+          return;
+        }
+
+        shufflePattern();
+        shuffleStep++;
+      }, 300);
     }
 
-    // New, smoother looping pattern — mimics the “video” look
     function shufflePattern() {
-        const patterns = [
-            [4,5,6,7,0,1,2,3], // shift halves
-            [1,0,3,2,5,4,7,6], // swap pairs
-            [2,3,0,1,6,7,4,5], // rotate left
-            [3,2,1,0,7,6,5,4], // reverse each row
-            [0,2,1,3,4,6,5,7], // zigzag swap
-            [5,4,7,6,1,0,3,2], // flip pattern
-        ];
+      // repeating patterned swaps to mimic that "video shuffle"
+      const patterns = [
+        [4, 5, 6, 7, 0, 1, 2, 3],
+        [1, 0, 3, 2, 5, 4, 7, 6],
+        [2, 3, 0, 1, 6, 7, 4, 5],
+        [3, 2, 1, 0, 7, 6, 5, 4],
+        [0, 2, 1, 3, 4, 6, 5, 7],
+        [5, 4, 7, 6, 1, 0, 3, 2],
+      ];
 
-        let pattern = patterns[shuffleStep % patterns.length];
+      const pattern = patterns[shuffleStep % patterns.length];
 
-        keys.forEach((key, i) => {
-            let newPos = pattern[i];
-            let row = Math.floor(newPos / 4);
-            let col = newPos % 4;
-            key.style.transition = "transform 0.25s ease"; // smoother motion
-            key.style.transform = `translate(${col * 60 - (i % 4) * 60}px, ${row * 120 - Math.floor(i / 4) * 120}px)`;
-        });
+      keys.forEach((key, i) => {
+        const newPos = pattern[i];
+        const row = Math.floor(newPos / 4);
+        const col = newPos % 4;
+        const x = col * 60 - (i % 4) * 60;
+        const y = row * 120 - Math.floor(i / 4) * 120;
+        key.style.transform = `translate(${x}px, ${y}px)`;
+      });
     }
 
     function checkKey(index) {
-        clearInterval(shuffleInterval);
-        showResult(index === correctKeyIndex);
+      clearInterval(shuffleInterval);
+      showResult(index === correctKeyIndex);
     }
 
     function showResult(win) {
-        document.getElementById("game").style.display = "none";
-        document.getElementById("result").style.display = "block";
-        document.getElementById("resultText").textContent = win ? "YOU WIN!" : "YOU LOSE!";
-        if (!win) {
-            audio.pause();
-        }
+      gameDiv.style.display = "none";
+      resultDiv.style.display = "block";
+      resultText.textContent = win ? "YOU WIN!" : "YOU LOSE!";
+      if (!win) audio.pause();
     }
 
     function restartGame() {
-        document.getElementById("result").style.display = "none";
-        document.querySelector("button").style.display = "block";
-        keys.forEach(key => {
-            key.style.backgroundImage = 'url("Key.png")';
-            key.style.transform = '';
-        });
-        audio.currentTime = 0;
-        audio.pause();
-        keysClickable = false;
+      resultDiv.style.display = "none";
+      startBtn.style.display = "block";
+      keys.forEach((key) => {
+        key.style.backgroundImage = 'url("Key.png")';
+        key.style.transform = "";
+      });
+      audio.pause();
+      audio.currentTime = 0;
+      keysClickable = false;
     }
-</script>
+
+    // start button listener
+    startBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
